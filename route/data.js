@@ -1,8 +1,8 @@
-const express = require('express');
-const router = express.Router();
+import express from 'express';
+import data from "../models/data.js";
+import auth from "../models/auth.js";
 
-const data = require("../models/data.js");
-const auth = require("../models/auth.js");
+const router = express.Router();
 
 router.get('/',
     (req, res, next) => auth.checkToken(req, res, next),
@@ -24,4 +24,4 @@ router.delete('/',
     (req, res) => data.deleteData(res, req)
 );
 
-module.exports = router;
+export default router;

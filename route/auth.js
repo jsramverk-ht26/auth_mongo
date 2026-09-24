@@ -1,7 +1,7 @@
-const express = require('express');
-const router = express.Router();
+import express from 'express';
+import auth from "../models/auth.js";
 
-const auth = require("../models/auth.js");
+const router = express.Router();
 
 router.get('/api_key', (req, res) => {
     let data = {
@@ -57,4 +57,4 @@ router.get('/', (req, res) => {
     res.redirect('/documentation.html');
 });
 
-module.exports = router;
+export default router;

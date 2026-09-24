@@ -1,27 +1,26 @@
-const database = require("../db/database.js");
-const hat = require("hat");
-const validator = require("email-validator");
-
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+import database from "../db/database.js";
+import crypto from "node:crypto";
+import validator from "email-validator";
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const jwtSecret = process.env.JWT_SECRET;
 
 const auth = {
     checkAPIKey: function (req, res, next) {
-        if ( req.path == '/') {
+        if (req.path == '/') {
             return next();
         }
 
-        if ( req.path == '/api_key') {
+        if (req.path == '/api_key') {
             return next();
         }
 
-        if ( req.path == '/api_key/confirmation') {
+        if (req.path == '/api_key/confirmation') {
             return next();
         }
 
-        if ( req.path == '/api_key/deregister') {
+        if (req.path == '/api_key/deregister') {
             return next();
         }
 
@@ -97,7 +96,7 @@ const auth = {
     },
 
     getUniqueAPIKey: async function(res, email, db) {
-        const apiKey = hat();
+        const apiKey = crypto.randomBytes(16).toString("hex");
         let data = {
             apiKey: ""
         };
@@ -265,18 +264,9 @@ const auth = {
         }
     },
 
-    comparePasswords: function(res, password, user) {
-        bcrypt.compare(password, user.password, (err, result) => {
-            if (err) {
-                return res.status(500).json({
-                    errors: {
-                        status: 500,
-                        source: "/login",
-                        title: "bcrypt error",
-                        detail: "bcrypt error"
-                    }
-                });
-            }
+    comparePasswords: async function(res, password, user) {
+        try {
+            const result = await bcrypt.compare(password, user.password);
 
             if (result) {
                 let payload = { api_key: user.apiKey, email: user.email };
@@ -300,7 +290,16 @@ const auth = {
                     detail: "Password is incorrect."
                 }
             });
-        });
+        } catch {
+            return res.status(500).json({
+                errors: {
+                    status: 500,
+                    source: "/login",
+                    title: "bcrypt error",
+                    detail: "bcrypt error"
+                }
+            });
+        }
     },
 
     register: async function(res, body) {
@@ -319,53 +318,46 @@ const auth = {
             });
         }
 
-        bcrypt.hash(password, 10, async function(err, hash) {
-            if (err) {
-                return res.status(500).json({
-                    errors: {
-                        status: 500,
-                        source: "/register",
-                        title: "bcrypt error",
-                        detail: "bcrypt error"
+        let db;
+
+        try {
+            const hash = await bcrypt.hash(password, 10);
+
+            db = await database.getDb();
+
+            let filter = { key: apiKey };
+            let updateDoc = {
+                $push: {
+                    users: {
+                        email: email,
+                        password: hash,
                     }
-                });
-            }
+                }
+            };
 
-            let db;
+            await db.collection.updateOne(filter, updateDoc);
 
-            try {
-                db = await database.getDb();
-
-                let filter = { key: apiKey };
-                let updateDoc = {
-                    $push: {
-                        users: {
-                            email: email,
-                            password: hash,
-                        }
-                    }
-                };
-
-                await db.collection.updateOne(filter, updateDoc);
-
-                return res.status(201).json({
-                    data: {
-                        message: "User successfully registered."
-                    }
-                });
-            } catch (e) {
-                return res.status(500).json({
-                    errors: {
-                        status: 500,
-                        source: "/register",
-                        title: "Database error",
-                        detail: err.message
-                    }
-                });
-            } finally {
+            return res.status(201).json({
+                data: {
+                    message: "User successfully registered."
+                }
+            });
+        } catch (e) {
+            return res.status(500).json({
+                errors: {
+                    status: 500,
+                    source: "/register",
+                    title: "Database error",
+                    detail: e.message
+                }
+            });
+        } finally {
+            // bcrypt.hash körs innan databasen öppnas — kastar den är db undefined,
+            // och utan den här vakten döljs det verkliga felet av en TypeError.
+            if (db) {
                 await db.client.close();
             }
-        });
+        }
     },
 
     checkToken: function(req, res, next) {
@@ -404,4 +396,4 @@ const auth = {
     }
 };
 
-module.exports = auth;
+export default auth;

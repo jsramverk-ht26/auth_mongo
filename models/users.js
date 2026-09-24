@@ -1,4 +1,4 @@
-const database = require("../db/database.js");
+import database from "../db/database.js";
 
 const users = {
     getAll: async function (res, apiKey) {
@@ -38,4 +38,4 @@ const users = {
     }
 };
 
-module.exports = users;
+export default users;

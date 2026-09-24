@@ -1,9 +1,8 @@
-const database = require("../db/database.js");
-const ObjectId = require('mongodb').ObjectId;
+import database from "../db/database.js";
+import { ObjectId } from 'mongodb';
 
 const data = {
     getAllDataForUser: async function (res, req) {
-        // req contains user object set in checkToken middleware
         let db;
 
         try {
@@ -57,7 +56,6 @@ const data = {
     },
 
     createData: async function(res, req) {
-        // req contains user object set in checkToken middleware
         let apiKey = req.body.api_key;
         let email = req.user.email;
         let db;
@@ -84,7 +82,7 @@ const data = {
 
             if (result) {
                 return res.status(201).json({
-                    data: result.value
+                    data: result
                 });
             }
         } catch (e) {
@@ -102,12 +100,11 @@ const data = {
     },
 
     updateData: async function (res, req) {
-        // req contains user object set in checkToken middleware
         if (req.body.id) {
             let _id = req.body.id;
             let newArtefact = req.body.artefact;
             let filter = {
-                "users.data._id": ObjectId(_id)
+                "users.data._id": new ObjectId(_id)
             };
             let db;
 
@@ -135,10 +132,10 @@ const data = {
                     if (user.data) {
                         let newData = [];
 
-                        user.data.forEach((data) => {
-                            let dataCopy = Object.assign({}, data);
+                        user.data.forEach((dataItem) => {
+                            let dataCopy = Object.assign({}, dataItem);
 
-                            if (data["_id"].equals(ObjectId(_id))) {
+                            if (dataItem["_id"].equals(new ObjectId(_id))) {
                                 dataCopy.artefact = newArtefact;
                             }
 
@@ -181,18 +178,17 @@ const data = {
     },
 
     deleteData: async function (res, req) {
-        // req contains user object set in checkToken middleware
         if (req.body.id) {
             let _id = req.body.id;
 
             let filter = {
-                "users.data._id": ObjectId(_id)
+                "users.data._id": new ObjectId(_id)
             };
 
             let deleteDoc = {
                 $pull: {
                     "users.$.data": {
-                        "_id": ObjectId(_id)
+                        "_id": new ObjectId(_id)
                     }
                 }
             };
@@ -230,4 +226,4 @@ const data = {
     }
 };
 
-module.exports = data;
+export default data;

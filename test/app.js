@@ -1,12 +1,9 @@
-/* global it describe */
-
 process.env.NODE_ENV = 'test';
 
-//Require the dev-dependencies
-const chai = require('chai');
-const chaiHttp = require('chai-http');
-const server = require('../app.js');
-const HTMLParser = require('node-html-parser');
+import * as chai from 'chai';
+import { default as chaiHttp, request } from 'chai-http';
+import HTMLParser from 'node-html-parser';
+import server from '../app.js';
 
 chai.should();
 
@@ -15,7 +12,7 @@ chai.use(chaiHttp);
 describe('app', () => {
     describe('GET /', () => {
         it('200 HAPPY PATH getting base', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/")
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -25,7 +22,7 @@ describe('app', () => {
         });
 
         it('page should contain H1 with auth', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/")
                 .end((err, res) => {
                     res.should.have.status(200);

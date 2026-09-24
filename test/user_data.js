@@ -1,18 +1,14 @@
-/* global it describe before */
-
 process.env.NODE_ENV = 'test';
 
-//Require the dev-dependencies
-const chai = require('chai');
-const chaiHttp = require('chai-http');
-const HTMLParser = require('node-html-parser');
+import * as chai from 'chai';
+import { default as chaiHttp, request } from 'chai-http';
+import HTMLParser from 'node-html-parser';
+import server from '../app.js';
+import database from "../db/database.js";
 
-const server = require('../app.js');
+const collectionName = "keys";
 
 chai.should();
-
-const database = require("../db/database.js");
-const collectionName = "keys";
 
 chai.use(chaiHttp);
 
@@ -21,32 +17,27 @@ let token = "";
 let _id = "";
 
 describe('user_data', () => {
-    before(() => {
-        return new Promise(async (resolve) => {
-            const db = await database.getDb();
+    before(async () => {
+        const db = await database.getDb();
 
-            db.db.listCollections(
+        try {
+            const collections = await db.db.listCollections(
                 { name: collectionName }
-            )
-                .next()
-                .then(async function(info) {
-                    if (info) {
-                        await db.collection.drop();
-                    }
-                })
-                .catch(function(err) {
-                    console.error(err);
-                })
-                .finally(async function() {
-                    await db.client.close();
-                    resolve();
-                });
-        });
+            ).toArray();
+
+            if (collections.length > 0) {
+                await db.collection.drop();
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            await db.client.close();
+        }
     });
 
     describe('GET /api_key', () => {
         it('200 HAPPY PATH getting form', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/api_key")
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -61,7 +52,7 @@ describe('user_data', () => {
                 gdpr: "gdpr"
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/confirmation")
                 .send(user)
                 .end((err, res) => {
@@ -87,7 +78,7 @@ describe('user_data', () => {
                 gdpr: "gdpr"
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/confirmation")
                 .send(user)
                 .end((err, res) => {
@@ -111,7 +102,7 @@ describe('user_data', () => {
                 gdpr: "gdpr"
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/confirmation")
                 .send(user)
                 .end((err, res) => {
@@ -140,7 +131,7 @@ describe('user_data', () => {
                 email: "test@auth.com"
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/confirmation")
                 .send(user)
                 .end((err, res) => {
@@ -170,7 +161,7 @@ describe('user_data', () => {
                 gdpr: "gdprgdpr"
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/confirmation")
                 .send(user)
                 .end((err, res) => {
@@ -197,7 +188,7 @@ describe('user_data', () => {
 
     describe('GET /users', () => {
         it('should get 401 as we do not provide valid api_key', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/users")
                 .end((err, res) => {
                     res.should.have.status(401);
@@ -209,7 +200,7 @@ describe('user_data', () => {
         });
 
         it('200 getting users for api key', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/users?api_key=" + apiKey)
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -228,7 +219,7 @@ describe('user_data', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/register")
                 .send(user)
                 .end((err, res) => {
@@ -243,7 +234,7 @@ describe('user_data', () => {
         });
 
         it('200 getting users for api key, 1 user', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/users?api_key=" + apiKey)
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -262,7 +253,7 @@ describe('user_data', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/register")
                 .send(user)
                 .end((err, res) => {
@@ -277,7 +268,7 @@ describe('user_data', () => {
         });
 
         it('200 getting users for api key, 2 user', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/users?api_key=" + apiKey)
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -296,7 +287,7 @@ describe('user_data', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/register")
                 .send(user)
                 .end((err, res) => {
@@ -311,7 +302,7 @@ describe('user_data', () => {
         });
 
         it('200 getting users for api key, 3 users', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/users?api_key=" + apiKey)
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -326,7 +317,7 @@ describe('user_data', () => {
 
     describe('GET /data', () => {
         it('should get 401 as we do not provide valid api_key', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/data")
                 .end((err, res) => {
                     res.should.have.status(401);
@@ -338,7 +329,7 @@ describe('user_data', () => {
         });
 
         it('should get 401 as we do not provide valid token', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/data?api_key=" + apiKey)
                 .end((err, res) => {
                     res.should.have.status(401);
@@ -356,7 +347,7 @@ describe('user_data', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/login")
                 .send(user)
                 .end((err, res) => {
@@ -378,7 +369,7 @@ describe('user_data', () => {
         });
 
         it('should get 200 as we do provide token', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/data?api_key=" + apiKey)
                 .set("x-access-token", token)
                 .end((err, res) => {
@@ -400,10 +391,9 @@ describe('user_data', () => {
 
             const data = {
                 artefact: JSON.stringify(artefact),
-                // api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/data")
                 .send(data)
                 .end((err, res) => {
@@ -427,7 +417,7 @@ describe('user_data', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/data")
                 .send(data)
                 .end((err, res) => {
@@ -451,7 +441,7 @@ describe('user_data', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/data")
                 .send(data)
                 .set("x-access-token", token)
@@ -471,7 +461,7 @@ describe('user_data', () => {
         });
 
         it('should get 200 with 1 artefact', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/data?api_key=" + apiKey)
                 .set("x-access-token", token)
                 .end((err, res) => {
@@ -497,7 +487,7 @@ describe('user_data', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .put("/data")
                 .send(data)
                 .end((err, res) => {
@@ -517,12 +507,11 @@ describe('user_data', () => {
             };
 
             const data = {
-                // id: _id,
                 artefact: JSON.stringify(artefact),
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .put("/data")
                 .set("x-access-token", token)
                 .send(data)
@@ -546,7 +535,7 @@ describe('user_data', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .put("/data")
                 .set("x-access-token", token)
                 .send(data)
@@ -558,7 +547,7 @@ describe('user_data', () => {
         });
 
         it('should get 200 with 1 changed artefact', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/data?api_key=" + apiKey)
                 .set("x-access-token", token)
                 .end((err, res) => {
@@ -584,7 +573,7 @@ describe('user_data', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .delete("/data")
                 .send(data)
                 .end((err, res) => {
@@ -598,11 +587,10 @@ describe('user_data', () => {
 
         it('should get 500 as we do not provide id', (done) => {
             const data = {
-                // id: _id,
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .delete("/data")
                 .set("x-access-token", token)
                 .send(data)
@@ -619,7 +607,7 @@ describe('user_data', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .delete("/data")
                 .set("x-access-token", token)
                 .send(data)
@@ -631,7 +619,7 @@ describe('user_data', () => {
         });
 
         it('should get 200 with 0 artefacts', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/data?api_key=" + apiKey)
                 .set("x-access-token", token)
                 .end((err, res) => {

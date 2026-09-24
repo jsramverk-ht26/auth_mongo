@@ -1,4 +1,5 @@
-const mongo = require("mongodb").MongoClient;
+import { MongoClient } from "mongodb";
+
 const collectionName = "keys";
 
 const database = {
@@ -9,9 +10,9 @@ const database = {
             dsn = "mongodb://localhost:27017/test";
         }
 
-        const client  = await mongo.connect(dsn);
-        const db = await client.db();
-        const collection = await db.collection(collectionName);
+        const client = await MongoClient.connect(dsn);
+        const db = client.db();
+        const collection = db.collection(collectionName);
 
         return {
             db: db,
@@ -21,4 +22,4 @@ const database = {
     }
 };
 
-module.exports = database;
+export default database;

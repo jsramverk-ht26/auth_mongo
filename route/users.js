@@ -1,7 +1,7 @@
-const express = require('express');
-const router = express.Router();
+import express from 'express';
+import users from "../models/users.js";
 
-const users = require("../models/users.js");
+const router = express.Router();
 
 router.get('/', (req, res) => users.getAll(res, req.query.api_key));
 router.get('/:id', (req, res) => users.getUser(
@@ -10,4 +10,4 @@ router.get('/:id', (req, res) => users.getUser(
     req.params.id
 ));
 
-module.exports = router;
+export default router;

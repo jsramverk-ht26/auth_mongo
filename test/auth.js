@@ -1,18 +1,14 @@
-/* global it describe before */
-
 process.env.NODE_ENV = 'test';
 
-//Require the dev-dependencies
-const chai = require('chai');
-const chaiHttp = require('chai-http');
-const HTMLParser = require('node-html-parser');
+import * as chai from 'chai';
+import { default as chaiHttp, request } from 'chai-http';
+import HTMLParser from 'node-html-parser';
+import server from '../app.js';
+import database from "../db/database.js";
 
-const server = require('../app.js');
+const collectionName = "keys";
 
 chai.should();
-
-const database = require("../db/database.js");
-const collectionName = "keys";
 
 chai.use(chaiHttp);
 
@@ -22,26 +18,24 @@ describe('auth', () => {
     before(async () => {
         const db = await database.getDb();
 
-        db.db.listCollections(
-            { name: collectionName }
-        )
-            .next()
-            .then(async function(info) {
-                if (info) {
-                    await db.collection.drop();
-                }
-            })
-            .catch(function(err) {
-                console.error(err);
-            })
-            .finally(async function() {
-                await db.client.close();
-            });
+        try {
+            const collections = await db.db.listCollections(
+                { name: collectionName }
+            ).toArray();
+
+            if (collections.length > 0) {
+                await db.collection.drop();
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            await db.client.close();
+        }
     });
 
     describe('GET /api_key', () => {
         it('200 HAPPY PATH getting form', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/api_key")
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -56,7 +50,7 @@ describe('auth', () => {
                 gdpr: "gdpr"
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/confirmation")
                 .send(user)
                 .end((err, res) => {
@@ -82,7 +76,7 @@ describe('auth', () => {
                 gdpr: "gdpr"
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/confirmation")
                 .send(user)
                 .end((err, res) => {
@@ -111,7 +105,7 @@ describe('auth', () => {
                 email: "test@auth.com"
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/confirmation")
                 .send(user)
                 .end((err, res) => {
@@ -141,7 +135,7 @@ describe('auth', () => {
                 gdpr: "gdprgdpr"
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/confirmation")
                 .send(user)
                 .end((err, res) => {
@@ -171,10 +165,9 @@ describe('auth', () => {
             let user = {
                 email: "test@example.com",
                 password: "123test",
-                // api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/register")
                 .send(user)
                 .end((err, res) => {
@@ -187,12 +180,11 @@ describe('auth', () => {
 
         it('should get 401 as we do not provide email', (done) => {
             let user = {
-                //email: "test@example.com",
                 password: "123test",
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/register")
                 .send(user)
                 .end((err, res) => {
@@ -206,11 +198,10 @@ describe('auth', () => {
         it('should get 401 as we do not provide password', (done) => {
             let user = {
                 email: "test@example.com",
-                // password: "123test",
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/register")
                 .send(user)
                 .end((err, res) => {
@@ -228,7 +219,7 @@ describe('auth', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/register")
                 .send(user)
                 .end((err, res) => {
@@ -248,10 +239,9 @@ describe('auth', () => {
             let user = {
                 email: "test@example.com",
                 password: "123test",
-                // api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/login")
                 .send(user)
                 .end((err, res) => {
@@ -264,12 +254,11 @@ describe('auth', () => {
 
         it('should get 401 as we do not provide email', (done) => {
             let user = {
-                //email: "test@example.com",
                 password: "123test",
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/login")
                 .send(user)
                 .end((err, res) => {
@@ -283,11 +272,10 @@ describe('auth', () => {
         it('should get 401 as we do not provide password', (done) => {
             let user = {
                 email: "test@example.com",
-                // password: "123test",
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/login")
                 .send(user)
                 .end((err, res) => {
@@ -305,7 +293,7 @@ describe('auth', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/login")
                 .send(user)
                 .end((err, res) => {
@@ -323,7 +311,7 @@ describe('auth', () => {
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/login")
                 .send(user)
                 .end((err, res) => {
@@ -334,14 +322,14 @@ describe('auth', () => {
                 });
         });
 
-        it('should get 201 HAPPY PATH', (done) => {
+        it('should get 200 HAPPY PATH', (done) => {
             let user = {
                 email: "test@example.com",
                 password: "123test",
                 api_key: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/login")
                 .send(user)
                 .end((err, res) => {
@@ -350,7 +338,6 @@ describe('auth', () => {
                     res.body.should.have.property("data");
                     res.body.data.should.have.property("type");
                     res.body.data.type.should.equal("success");
-                    res.body.data.should.have.property("type");
 
                     done();
                 });
@@ -359,7 +346,7 @@ describe('auth', () => {
 
     describe('deregister', () => {
         it('200 HAPPY PATH getting deregister form', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/api_key/deregister")
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -371,10 +358,9 @@ describe('auth', () => {
         it('should get 200 with message no apikey', (done) => {
             let user = {
                 email: "test@auth.com",
-                // apikey: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/deregister")
                 .send(user)
                 .end((err, res) => {
@@ -396,11 +382,10 @@ describe('auth', () => {
 
         it('should get 200 with message no email', (done) => {
             let user = {
-                //email: "test@auth.com",
                 apikey: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/deregister")
                 .send(user)
                 .end((err, res) => {
@@ -426,7 +411,7 @@ describe('auth', () => {
                 apikey: apiKey
             };
 
-            chai.request(server)
+            request.execute(server)
                 .post("/api_key/deregister")
                 .send(user)
                 .end((err, res) => {
@@ -447,7 +432,7 @@ describe('auth', () => {
         });
 
         it('should get 401 no valid api key', (done) => {
-            chai.request(server)
+            request.execute(server)
                 .get("/products?api_key=" + apiKey)
                 .end((err, res) => {
                     res.should.have.status(401);
